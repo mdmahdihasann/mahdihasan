@@ -1,17 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { Bricolage_Grotesque, Instrument_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
 import { profile } from "@/data/profile";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
   display: "swap",
 });
 
-const inter = Inter({
-  variable: "--font-inter",
+const instrumentSans = Instrument_Sans({
+  variable: "--font-instrument-sans",
   subsets: ["latin"],
   display: "swap",
 });
@@ -54,8 +54,11 @@ export const metadata: Metadata = {
 
 /** `themeColor` lives on the viewport export, not on `metadata`. */
 export const viewport: Viewport = {
-  themeColor: "#050816",
+  themeColor: "#1a271e",
   colorScheme: "dark",
+  // Lets the mobile tab bar sit under the home indicator, padded by
+  // env(safe-area-inset-bottom) rather than floating above a grey strip.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -66,7 +69,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable} h-full antialiased`}
+      className={`${bricolage.variable} ${instrumentSans.variable} ${jetBrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {/* Reveal elements start at opacity 0 and are switched on by JS. Without

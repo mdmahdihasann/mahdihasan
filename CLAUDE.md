@@ -31,8 +31,14 @@ markup (lines 517–733), and a `<script>` block (lines 735–1108). If a sectio
 looks unexplained, read the corresponding region of that file rather than inventing something.
 
 `app/page.tsx` composes the whole site in section order: skip link → Background → Particles →
-CoursorGlow → Navber → (Hero, About, Skills, Projects, Experience, Services, Contact) → Footer →
-BackToTop → Interactions.
+CoursorGlow → Navber → Hero → TechStrip → `.wrap.panels` (About, Skills, Services, Projects,
+Process, Experience, Numbers, Contact) → Footer → BackToTop → Interactions.
+
+The layout follows a Pinterest reference (pin 1096133996835958068) in this site's own palette:
+everything after the hero is a framed `.panel` on one 12-column grid (`.panels`). About + Skills
+("My Expertise") share a row, as do Experience ("My Journey") + Numbers; the rest run full width.
+Each panel opens with `PanelHead` (icon tile + h2) — there are no eyebrow labels any more. The
+reference's testimonials block is deliberately not reproduced (see Known gaps).
 
 ### Server/client split
 
@@ -46,12 +52,13 @@ setup and teardown:
 | `.reveal` → `.in` on scroll (with sibling stagger), magnetic buttons + ripple, card spotlight | `Interactions.tsx` (renders `null`, kept **last** on the page so the DOM it queries exists) via `useReveal` / `useMagnetic` / `useSpotlight` |
 | Drifting canvas starfield | `Particles.tsx` + `useParticles` |
 | Cursor glow and eased dot | `CoursorGlow.tsx` + `useCursor` |
-| Nav background, reading-progress bar, scroll-spy | `Navber.tsx` + `useScrollState` (one rAF-throttled listener) over the pure maths in `lib/scroll.ts` |
-| Burger, mobile menu, body scroll lock, Escape-to-close | `Navber.tsx` (React state, not class toggling) |
+| Nav background, scroll-spy | `Navber.tsx` + `useScrollState` (one rAF-throttled listener) over the pure maths in `lib/scroll.ts` |
+| Phone nav (≤960px): app-style bottom tab bar (Home / About / Work / Contact / Menu, lit tile slides via `--tab-i`), Menu sheet of every section, scrim, body scroll lock, Escape-to-close | `Navber.tsx` (React state, not class toggling). The top bar keeps only the logo and an icon-only CV button there. |
 | Back-to-top button | `BackToTop.tsx` |
-| Typing code editor in the hero | `CodeEditor.tsx` — tokenised lines, no `innerHTML` |
-| Stat count-up, skill-bar fills | `StatCounter.tsx`, `Skills.tsx` (own observers) |
-| Contact form (react-hook-form + zod) | `Contact.tsx` |
+| Hero portrait parallax (`--px`/`--py`) and the typed "Websites / Web apps…" line | `HeroPortrait.tsx`, `RoleCycler.tsx` — the hero's load sequence itself is pure CSS keyframes |
+| Stat count-up, skill tabs + bar fills | `StatCounter.tsx`, `Skills.tsx` (own observers; bars fill via `data-filled` — an attribute, because re-rendering `className` on a `.reveal` element wipes the `.in` that `useReveal` added and hides it) |
+| Contact form (react-hook-form + zod, schema shared with the server in `lib/contactSchema.ts`, honeypot field) sent on two channels at once — FormSubmit email from the browser and Telegram via `app/api/contact/route.ts` | `Contact.tsx` + `lib/sendContact.ts` + `lib/server/telegram.ts` |
+| Chat assistant (floating launcher, answers about Mahdi, sends hiring questions to email) | `ChatBot.tsx` → `app/api/chat/route.ts`: Claude when `ANTHROPIC_API_KEY` is set, else the free keyword engine `lib/chat/localReply.ts` (English/Banglish/Bangla); facts come from `lib/chat/knowledge.ts`, built from `data/*.ts` — projects deliberately excluded |
 
 `useMagnetic` and `useSpotlight` bind by class name at mount, so markup added later (or rendered
 conditionally) will not pick them up without re-running the hook.
@@ -76,13 +83,20 @@ timeline are transcribed from `public/CV.png`, which is the résumé the Downloa
   and the file says so at the top. Do not present them as real work — replace them, and add `demo` /
   `repo` URLs, before the site ships. Until a project has a URL its card renders muted text rather
   than a link, so nothing pretends to be clickable.
-- **The testimonials section was removed** (component, data, styles and nav entry) because the
-  quotes were invented. If real quotes ever arrive, rebuild it and renumber the eyebrows — they run
-  `01`–`06` with no gaps and `tests/page.test.tsx` asserts that.
-- Skill percentages in `data/skills.ts` and the counters in `About.tsx` are weightings, not measured
-  numbers.
-- The contact form validates but does not send — `onSubmit` logs and fakes success. `emailjs-com` is
-  installed for wiring it up.
+- **The testimonials section was removed** (styles and nav entry; `Testimonials.tsx` and
+  `data/testimonials.ts` are dead files) because the quotes were invented. If real quotes ever
+  arrive, rebuild it as a panel with `PanelHead`.
+- `data/process.ts` (the six-step work process) is written copy, not from the CV.
+- Skill percentages in `data/skills.ts` and the counters in `data/stats.ts` are weightings, not
+  measured numbers.
+- The contact form emails `profile.email` through FormSubmit (`formsubmit.co/ajax/<email>`, no
+  server or key). The **first** submission sends an activation email to that inbox; until its link
+  is clicked, sends fail and the form offers a prefilled `mailto:` fallback. Changing
+  `profile.email` needs a fresh activation.
+  It also posts to `/api/contact`, which forwards to Telegram once `TELEGRAM_BOT_TOKEN` /
+  `TELEGRAM_CHAT_ID` are set (answers 503 until then); a send counts as delivered if either
+  channel succeeds. Env vars are documented in `.env.example`. Both API routes rate-limit per IP
+  in memory (`lib/server/rateLimit.ts`), so the site needs a Node host, not a static export.
 - `resumeUrl` points at the PNG résumé; swap it for a PDF export when there is one.
 - `app/layout.tsx` sets no `metadataBase` and no OG image, because there is no domain yet; add both
   together when the site gets one.
@@ -92,11 +106,13 @@ timeline are transcribed from `public/CV.png`, which is the résumé the Downloa
 Two systems coexist deliberately:
 
 1. **`app/globals.css` is hand-written plain CSS copied from the source page** — the real design
-   system. It defines the palette and easing on `:root` (`--primary`, `--secondary`, `--accent`,
-   `--bg`, `--text-1..3`, `--ease`), plus the vocabulary every `components/home/*` component uses:
-   `.wrap` (page container), `.glass` (card surface), `.reveal` / `.reveal-scale` (animate in when
-   JS adds `.in`), `.lift` (hover raise), `.spotlight` (pointer-tracked highlight), `.eyebrow`,
-   `.section-title .grad`, `.btn`, `.magnetic`. Section styles are grouped by banner comments
+   system. The palette is lifted from `public/portrait.jpg`: `--bg` (#1a271e) is the photo's own
+   backdrop, so the edge-masked portrait sits on the page with no seam — change one and you must
+   change the other. `:root` holds `--sage`, `--khaki`, `--olive`, `--leaf` (with `--primary` /
+   `--secondary` / `--accent` kept as aliases), `--bg`, `--text-1..3` and `--ease`, plus the vocabulary every `components/home/*` component uses:
+   `.wrap` (page container), `.panel` + `.panel-head` (section frame), `.reveal` / `.reveal-scale`
+   (animate in when JS adds `.in`), `.lift` (hover raise), `.spotlight` (pointer-tracked
+   highlight), `.btn` / `.btn-sm`, `.magnetic`. Section styles are grouped by banner comments
    matching the section ids.
 2. **Tailwind v4** (`@import "tailwindcss"`, PostCSS-only config, no `tailwind.config`) — used only
    for the few utilities on `<html>`/`<body>` in `app/layout.tsx`.
@@ -155,7 +171,18 @@ fixed column count; and `--text-3` is `#7c88a6` because the original `#6b7690` s
 - `cn()` in `lib/utils.ts` (clsx + tailwind-merge) is the only shared utility.
 - Components are arrow functions with a default export, one section per file under `components/home/`.
 - Content lives in `data/*.ts` as typed exported values (`profile`, `projects`, `skillGroups`,
-  `services`, `testimonials`, `experience`) — edit those, not the JSX, to change what the site says.
-- The eyebrow labels render literal `// text`, so they must be written as `{"// About Me"}`;
-  unbraced, `react/jsx-no-comment-textnodes` fails the lint.
-- Declared but still unused: `framer-motion`, `lucide-react`, `emailjs-com`.
+  `services`, `experience`, `stats`, `process`) — edit those, not the JSX, to change what the site says.
+- Keyframe names must not collide with Tailwind's (`ping`, `pulse`, `spin`, `bounce`): Tailwind's
+  definition wins and silently replaces ours. The live-dot pulse is `livePing` for that reason.
+- Icons: UI glyphs come from `lucide-react` (services, stats, contact rows, arrows); technology logos
+  come from `simple-icons` path data, stored per skill as `mark` in `data/skills.ts` and drawn by
+  `components/home/TechIcon.tsx` (logos stay sage until hovered, then take `--brand`). A skill with
+  no logo uses `{ monogram: "…" }`. The scrolling strip under the hero (`TechStrip.tsx`) is
+  `techStrip` from that file.
+- `.glow-border` (animated conic edge) is deliberately on one card only — the contact form. Don't
+  spread it.
+- Declared but still unused: `framer-motion`, `emailjs-com`.
+- There is no reading-progress bar any more — it was removed on request; don't bring it back.
+- The background (`Background.tsx`) is four drifting radial-gradient pools (`.bg-aurora i`,
+  transform-only loops) under the static light and grain. A grid overlay was tried and dropped as
+  generic; don't re-add one.

@@ -1,29 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { activeSectionId, scrollProgress } from "@/lib/scroll";
-
-describe("scrollProgress", () => {
-  it("reports 0 at the top and 1 at the bottom", () => {
-    expect(scrollProgress(0, 4000, 1000)).toBe(0);
-    expect(scrollProgress(3000, 4000, 1000)).toBe(1);
-  });
-
-  it("is linear in between", () => {
-    expect(scrollProgress(1500, 4000, 1000)).toBeCloseTo(0.5);
-  });
-
-  it("returns 0 when the page is not scrollable", () => {
-    // A page shorter than the viewport has no progress to report — the old
-    // shape of this maths would have divided by zero.
-    expect(scrollProgress(0, 600, 1000)).toBe(0);
-    expect(scrollProgress(0, 1000, 1000)).toBe(0);
-  });
-
-  it("clamps overscroll at both ends", () => {
-    expect(scrollProgress(-200, 4000, 1000)).toBe(0);
-    expect(scrollProgress(99999, 4000, 1000)).toBe(1);
-  });
-});
+import { activeSectionId } from "@/lib/scroll";
 
 describe("activeSectionId", () => {
   const sections = [

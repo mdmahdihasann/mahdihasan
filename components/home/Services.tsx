@@ -1,38 +1,28 @@
+import { Briefcase } from "lucide-react";
+
 import { services } from "@/data/services";
 
-const Services = () => {
-  return (
-    <section id="services" aria-labelledby="services-title">
-      <div className="wrap">
-        <div className="section-head reveal">
-          <p className="eyebrow">
-            <span className="num">05</span> {"// What I Do"}
-          </p>
-          <h2 className="section-title" id="services-title">
-            Services I <span className="grad">Offer</span>
-          </h2>
-          <p className="section-sub">
-            End-to-end development, from first pixel to production deploy.
-          </p>
-        </div>
+import PanelHead from "./PanelHead";
 
-        <div className="services-grid" id="servicesGrid">
-          {services.map((service) => (
-            <article
-              className="glass service-card reveal lift spotlight"
-              key={service.name}
-            >
-              <div className="service-icon" aria-hidden>
-                {service.icon}
-              </div>
-              <h3>{service.name}</h3>
-              <p>{service.desc}</p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
+/** Two columns of icon + text rows, ruled apart rather than boxed. */
+const Services = () => (
+  <section id="services" className="panel reveal" aria-labelledby="services-title">
+    <PanelHead icon={Briefcase} title="What I Do" id="services-title" />
+
+    <ul className="service-list">
+      {services.map(({ icon: Icon, name, desc }) => (
+        <li className="service-row" key={name}>
+          <span className="service-icon" aria-hidden>
+            <Icon size={20} strokeWidth={1.75} />
+          </span>
+          <div>
+            <h3>{name}</h3>
+            <p>{desc}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </section>
+);
 
 export default Services;

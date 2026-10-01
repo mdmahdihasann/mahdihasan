@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import Page from "@/app/page";
 
 const sectionIds = (container: HTMLElement) =>
-  Array.from(container.querySelectorAll("main > section"), (s) => s.id);
+  Array.from(container.querySelectorAll("main section"), (s) => s.id);
 
 describe("Page", () => {
   it("renders the sections in order, with testimonials removed", () => {
@@ -14,9 +14,11 @@ describe("Page", () => {
       "home",
       "about",
       "skills",
-      "projects",
-      "experience",
       "services",
+      "projects",
+      "process",
+      "experience",
+      "numbers",
       "contact",
     ]);
   });
@@ -30,14 +32,15 @@ describe("Page", () => {
     expect(screen.queryByText(/client name/i)).toBeNull();
   });
 
-  it("numbers the remaining section eyebrows 01 through 06 with no gaps", () => {
+  it("opens every panel with its icon and a level-2 title", () => {
     const { container } = render(<Page />);
 
-    const numbers = Array.from(
-      container.querySelectorAll(".eyebrow .num"),
-      (el) => el.textContent,
-    );
-    expect(numbers).toEqual(["01", "02", "03", "04", "05", "06"]);
+    const panels = container.querySelectorAll("main section.panel");
+    expect(panels).toHaveLength(8);
+    panels.forEach((panel) => {
+      expect(panel.querySelector("h2"), panel.id).not.toBeNull();
+      expect(panel.querySelector(".panel-icon"), panel.id).not.toBeNull();
+    });
   });
 
   it("has exactly one level-1 heading", () => {
@@ -56,7 +59,7 @@ describe("Page", () => {
   it("labels every section by its own heading", () => {
     const { container } = render(<Page />);
 
-    container.querySelectorAll("main > section").forEach((section) => {
+    container.querySelectorAll("main section").forEach((section) => {
       const id = section.getAttribute("aria-labelledby");
       expect(id, `${section.id} is missing aria-labelledby`).toBeTruthy();
       expect(container.querySelector(`#${id}`)).not.toBeNull();

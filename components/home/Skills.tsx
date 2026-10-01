@@ -1,87 +1,123 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { Layers } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { skillGroups } from "@/data/skills";
 import { prefersReducedMotion } from "@/lib/motion";
 
+import PanelHead from "./PanelHead";
+import TechIcon from "./TechIcon";
+
+/**
+ * One card, one group of bars at a time. Every group is rendered (inactive
+ * ones `hidden`) so the bars are in the DOM for search and for the hooks.
+ *
+ * Bars carry their real width from the start and are scaled up from zero by a
+ * CSS animation once the card is first in view (`data-filled`). A `hidden` panel
+ * restarts that animation when it is shown, so switching tabs refills them.
+ */
 const Skills = () => {
-  const gridRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+  const [filled, setFilled] = useState(false);
+  const cardRef = useRef<HTMLElement>(null);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const uid = useId();
 
-  // Fill each bar to its level once its category card is in view.
   useEffect(() => {
-    const grid = gridRef.current;
-    if (!grid) return;
-
-    const fill = (card: Element) => {
-      card.querySelectorAll<HTMLElement>(".skill-fill").forEach((bar) => {
-        bar.style.width = `${bar.dataset.val}%`;
-      });
-    };
-
-    if (prefersReducedMotion()) {
-      grid.querySelectorAll(".skill-cat").forEach(fill);
-      return;
-    }
+    const card = cardRef.current;
+    if (!card) return;
 
     const io = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          fill(entry.target);
-          io.unobserve(entry.target);
-        });
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        setFilled(true);
+        io.disconnect();
       },
-      { threshold: 0.3 },
+      { threshold: prefersReducedMotion() ? 0 : 0.3 },
     );
 
-    grid.querySelectorAll<HTMLElement>(".skill-cat").forEach((c) => io.observe(c));
+    io.observe(card);
     return () => io.disconnect();
   }, []);
 
-  return (
-    <section id="skills" aria-labelledby="skills-title">
-      <div className="wrap">
-        <div className="section-head reveal">
-          <p className="eyebrow">
-            <span className="num">02</span> {"// Skills"}
-          </p>
-          <h2 className="section-title" id="skills-title">
-            Tools I build <span className="grad">with</span>
-          </h2>
-          <p className="section-sub">
-            The languages, frameworks and platforms I reach for daily.
-          </p>
-        </div>
+  /** Arrow keys move between tabs, as the ARIA tabs pattern expects. */
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    const last = skillGroups.length - 1;
+    const next =
+      e.key === "ArrowRight" ? (active === last ? 0 : active + 1)
+      : e.key === "ArrowLeft" ? (active === 0 ? last : active - 1)
+      : e.key === "Home" ? 0
+      : e.key === "End" ? last
+      : null;
+    if (next === null) return;
+    e.preventDefault();
+    setActive(next);
+    tabRefs.current[next]?.focus();
+  };
 
-        <div className="skills-grid" id="skillsGrid" ref={gridRef}>
-          {skillGroups.map((group) => (
-            <div className="glass skill-cat reveal lift spotlight" key={group.cat}>
-              <h3>{group.cat}</h3>
-              <ul>
-                {group.items.map(({ name, level }) => (
-                  <li className="skill-item" key={name}>
-                    <div className="skill-top">
-                      <span>{name}</span>
-                      <span>{level}%</span>
-                    </div>
-                    <div
-                      className="skill-bar"
-                      role="meter"
-                      aria-label={name}
-                      aria-valuenow={level}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                    >
-                      <div className="skill-fill" data-val={level} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+  return (
+    <section
+      id="skills"
+      ref={cardRef}
+      // An attribute, not a class: re-rendering `className` would wipe the
+      // `.in` that useReveal added and hide the panel again.
+      className="panel reveal"
+      data-filled={filled || undefined}
+      aria-labelledby="skills-title"
+    >
+      <PanelHead icon={Layers} title="My Expertise" id="skills-title" />
+
+      <div className="skill-tabs" role="tablist" aria-label="Skill groups" onKeyDown={onKeyDown}>
+        {skillGroups.map((group, i) => (
+          <button
+            key={group.cat}
+            ref={(el) => {
+              tabRefs.current[i] = el;
+            }}
+            type="button"
+            role="tab"
+            id={`${uid}-tab-${i}`}
+            aria-selected={i === active}
+            aria-controls={`${uid}-panel-${i}`}
+            tabIndex={i === active ? 0 : -1}
+            onClick={() => setActive(i)}
+          >
+            {group.cat}
+          </button>
+        ))}
       </div>
+
+      {skillGroups.map((group, i) => (
+        <ul
+          key={group.cat}
+          className="skill-list"
+          role="tabpanel"
+          id={`${uid}-panel-${i}`}
+          aria-labelledby={`${uid}-tab-${i}`}
+          hidden={i !== active}
+        >
+          {group.items.map(({ name, level, mark }) => (
+            <li className="skill-item" key={name}>
+              <span className="skill-name">
+                <TechIcon mark={mark} size={15} />
+                {name}
+              </span>
+              <span className="skill-pct">{level}%</span>
+              <div
+                className="skill-bar"
+                role="meter"
+                aria-label={name}
+                aria-valuenow={level}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <div className="skill-fill" style={{ width: `${level}%` }} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      ))}
     </section>
   );
 };

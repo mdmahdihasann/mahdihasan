@@ -23,7 +23,7 @@ describe("Timeline", () => {
 
     expect(screen.getByText("Current role")).toHaveClass("tl-chip", "current");
     expect(container.querySelectorAll(".tl-chip.current")).toHaveLength(1);
-    expect(container.querySelectorAll(".tl-node-inner.current")).toHaveLength(1);
+    expect(container.querySelectorAll(".tl-item.current")).toHaveLength(1);
   });
 
   it("says whether each remaining entry is work or study", () => {
@@ -34,41 +34,9 @@ describe("Timeline", () => {
     );
     // The current role's chip says so instead of repeating "Work".
     expect(chips).toEqual(["Current role", "Education", "Education"]);
-    expect(container.querySelectorAll(".tl-node-inner.education")).toHaveLength(
+    expect(container.querySelectorAll(".tl-item.education")).toHaveLength(
       experience.filter((entry) => entry.kind === "education").length,
     );
-  });
-
-  it("reveals the card and the node, never the row itself", () => {
-    const { container } = render(<Timeline />);
-
-    // A row that slid in on scroll would drag its rail segment sideways.
-    expect(container.querySelectorAll(".tl-item.reveal")).toHaveLength(0);
-    expect(container.querySelectorAll(".tl-card.reveal")).toHaveLength(
-      experience.length,
-    );
-    expect(container.querySelectorAll(".tl-node-inner.reveal-scale")).toHaveLength(
-      experience.length,
-    );
-  });
-
-  it("numbers the nodes downward, oldest entry last", () => {
-    const { container } = render(<Timeline />);
-
-    const numbers = Array.from(
-      container.querySelectorAll(".tl-node-inner"),
-      (node) => node.textContent,
-    );
-    expect(numbers).toEqual(["03", "02", "01"]);
-  });
-
-  it("alternates cards left and right", () => {
-    const { container } = render(<Timeline />);
-
-    const sides = Array.from(container.querySelectorAll(".tl-item"), (item) =>
-      item.classList.contains("left") ? "left" : "right",
-    );
-    expect(sides).toEqual(["left", "right", "left"]);
   });
 });
 

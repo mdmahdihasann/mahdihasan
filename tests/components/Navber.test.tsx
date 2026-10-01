@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -18,15 +18,24 @@ describe("Navber", () => {
     expect(hrefs).toEqual([
       "#about",
       "#skills",
-      "#projects",
-      "#experience",
       "#services",
+      "#projects",
+      "#process",
+      "#experience",
       "#contact",
     ]);
     expect(hrefs).not.toContain("#testimonials");
 
-    // Desktop list + mobile menu + the two CTAs both point at #contact.
+    // Desktop list + mobile menu.
     expect(screen.getAllByRole("link", { name: "Projects" })).toHaveLength(2);
+  });
+
+  it("offers the CV as a download from both the bar and the menu", () => {
+    render(<Navber />);
+
+    const cv = screen.getAllByRole("link", { name: /download cv/i, hidden: true });
+    expect(cv).toHaveLength(2);
+    cv.forEach((link) => expect(link).toHaveAttribute("download"));
   });
 
   it("keeps the closed mobile menu out of the accessibility tree", () => {
@@ -83,14 +92,28 @@ describe("Navber", () => {
     expect(menu).not.toHaveClass("open");
   });
 
-  it("starts unscrolled with an empty progress bar", () => {
+  it("starts unscrolled, with no reading-progress bar", () => {
     const { container } = render(<Navber />);
 
     expect(container.querySelector("nav")).not.toHaveClass("scrolled");
-    expect(
-      container.querySelector<HTMLElement>(".nav-progress")?.style.getPropertyValue(
-        "--progress",
-      ),
-    ).toBe("0");
+    expect(container.querySelector(".nav-progress")).toBeNull();
+  });
+
+  it("gives phones an app-style tab bar that starts on Home", () => {
+    render(<Navber />);
+
+    const bar = screen.getByRole("navigation", { name: /quick navigation/i });
+    const tabs = within(bar).getAllByRole("link");
+    expect(tabs.map((tab) => tab.getAttribute("href"))).toEqual([
+      "#home",
+      "#about",
+      "#projects",
+      "#contact",
+    ]);
+    expect(within(bar).getByRole("link", { name: "Home" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    expect(within(bar).getByRole("button", { name: /open menu/i })).toBeInTheDocument();
   });
 });

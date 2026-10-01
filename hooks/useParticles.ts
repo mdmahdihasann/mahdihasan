@@ -14,12 +14,13 @@ type Particle = {
   a: number;
 };
 
-const COLORS = ["#00E5FF", "#7C3AED", "#22C55E"];
+/** Dust in the studio light: the sage and khaki from the portrait. */
+const COLORS = ["#a9c6a2", "#d9d2a3", "#eef0e4"];
 
 /** Drifting starfield painted onto a full-viewport canvas. */
 export function useParticles(
   canvasRef: RefObject<HTMLCanvasElement | null>,
-  count = 70,
+  count = 45,
 ) {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -41,7 +42,7 @@ export function useParticles(
       vx: (Math.random() - 0.5) * 0.25,
       vy: (Math.random() - 0.5) * 0.25,
       c: COLORS[Math.floor(Math.random() * COLORS.length)],
-      a: Math.random() * 0.5 + 0.15,
+      a: Math.random() * 0.35 + 0.1,
     }));
 
     const still = prefersReducedMotion();

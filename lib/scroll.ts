@@ -1,24 +1,7 @@
 /**
- * Pure scroll maths shared by the nav progress bar and the back-to-top button.
+ * Pure scroll maths behind the nav's scroll-spy.
  * Kept out of the hooks so it can be unit tested without a DOM.
  */
-
-/**
- * How far the page has been read, as `0..1`.
- *
- * `scrollHeight - innerHeight` is the total scrollable distance; when a page is
- * shorter than the viewport that is `0` and there is nothing to report, so the
- * bar stays empty instead of dividing by zero.
- */
-export function scrollProgress(
-  scrollY: number,
-  scrollHeight: number,
-  innerHeight: number,
-) {
-  const scrollable = scrollHeight - innerHeight;
-  if (scrollable <= 0) return 0;
-  return Math.min(1, Math.max(0, scrollY / scrollable));
-}
 
 /**
  * Picks the id of the section that owns the current viewport.

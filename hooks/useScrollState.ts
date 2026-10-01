@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-import { activeSectionId, scrollProgress } from "@/lib/scroll";
+import { activeSectionId } from "@/lib/scroll";
 
 export type ScrollState = {
   /** Past the point where the nav takes on its solid background. */
   scrolled: boolean;
-  /** Read progress, `0..1`, for the bar under the nav. */
-  progress: number;
   /** Id of the section currently in view, or `null` above the first one. */
   active: string | null;
 };
@@ -16,15 +14,14 @@ export type ScrollState = {
 const SCROLLED_AT = 40;
 
 /**
- * One scroll listener driving the nav: background state, progress bar and the
- * scroll-spy highlight. Doing it in a single rAF-throttled handler keeps the
- * work off the scroll thread — three separate listeners would each force their
+ * One scroll listener driving the nav: background state and the scroll-spy
+ * highlight. Doing it in a single rAF-throttled handler keeps the
+ * work off the scroll thread — separate listeners would each force their
  * own layout read.
  */
 export function useScrollState(sectionIds: readonly string[]): ScrollState {
   const [state, setState] = useState<ScrollState>({
     scrolled: false,
-    progress: 0,
     active: null,
   });
 
@@ -49,11 +46,6 @@ export function useScrollState(sectionIds: readonly string[]): ScrollState {
 
       setState({
         scrolled: scrollY > SCROLLED_AT,
-        progress: scrollProgress(
-          scrollY,
-          document.documentElement.scrollHeight,
-          window.innerHeight,
-        ),
         active: activeSectionId(sections, scrollY, navHeight + 40),
       });
     };

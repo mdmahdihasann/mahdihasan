@@ -1,4 +1,5 @@
 import { act, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import Skills from "@/components/home/Skills";
@@ -9,15 +10,40 @@ import { setMatchMedia } from "../helpers/matchMedia";
 const allSkills = skillGroups.flatMap((group) => group.items);
 
 describe("Skills", () => {
-  it("renders every group and every skill from the data", () => {
+  it("offers one tab per group, the first one selected", () => {
     render(<Skills />);
 
-    skillGroups.forEach((group) => {
-      expect(
-        screen.getByRole("heading", { name: group.cat }),
-      ).toBeInTheDocument();
-    });
-    expect(screen.getAllByRole("meter")).toHaveLength(allSkills.length);
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs.map((tab) => tab.textContent)).toEqual(
+      skillGroups.map((group) => group.cat),
+    );
+    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+    expect(screen.getAllByRole("meter")).toHaveLength(skillGroups[0].items.length);
+  });
+
+  it("keeps every group's bars in the DOM, hiding the inactive ones", () => {
+    render(<Skills />);
+
+    expect(screen.getAllByRole("meter", { hidden: true })).toHaveLength(
+      allSkills.length,
+    );
+  });
+
+  it("switches groups on click and with the arrow keys", async () => {
+    const user = userEvent.setup();
+    render(<Skills />);
+
+    await user.click(screen.getByRole("tab", { name: skillGroups[2].cat }));
+    expect(screen.getByRole("tabpanel")).toHaveTextContent(
+      skillGroups[2].items[0].name,
+    );
+
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("tab", { name: skillGroups[3].cat })).toHaveFocus();
+    expect(screen.getByRole("tab", { name: skillGroups[3].cat })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
   });
 
   it("exposes each bar's level to assistive tech", () => {
@@ -30,33 +56,33 @@ describe("Skills", () => {
     );
   });
 
-  it("leaves the bars empty until the card scrolls into view", () => {
+  it("gives each bar its real width, and fills them once in view", () => {
     const { container } = render(<Skills />);
-
-    container
-      .querySelectorAll<HTMLElement>(".skill-fill")
-      .forEach((bar) => expect(bar.style.width).toBe(""));
-  });
-
-  it("fills each bar to its own level on intersection", () => {
-    const { container } = render(<Skills />);
-
-    act(() => intersectAll());
+    const section = container.querySelector("section")!;
 
     const bars = container.querySelectorAll<HTMLElement>(".skill-fill");
-    bars.forEach((bar, i) => {
-      expect(bar.style.width).toBe(`${allSkills[i].level}%`);
-    });
+    bars.forEach((bar, i) => expect(bar.style.width).toBe(`${allSkills[i].level}%`));
+    expect(section).not.toHaveAttribute("data-filled");
+
+    act(() => intersectAll());
+    expect(section).toHaveAttribute("data-filled");
   });
 
-  it("fills the bars immediately under reduced motion", () => {
+  it("never rewrites its class list, so the reveal's .in survives filling", () => {
+    const { container } = render(<Skills />);
+    const section = container.querySelector("section")!;
+
+    section.classList.add("in");
+    act(() => intersectAll());
+    expect(section).toHaveClass("in");
+  });
+
+  it("still fills under reduced motion", () => {
     setMatchMedia(true);
     const { container } = render(<Skills />);
 
-    // No intersection: an observer would never fire for someone who has
-    // animation turned off, so the bars have to be filled up front.
-    const bars = container.querySelectorAll<HTMLElement>(".skill-fill");
-    expect(bars[0].style.width).toBe(`${allSkills[0].level}%`);
+    act(() => intersectAll());
+    expect(container.querySelector("section")).toHaveAttribute("data-filled");
   });
 });
 

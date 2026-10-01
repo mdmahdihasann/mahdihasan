@@ -8,14 +8,22 @@ describe("Hero", () => {
   it("takes its identity from the profile data, not hard-coded copy", () => {
     render(<Hero />);
 
+    expect(screen.getByText(profile.name)).toBeInTheDocument();
+    expect(screen.getByText(profile.availability)).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { level: 1, name: new RegExp(profile.name) }),
+      screen.getByText((_, el) => el?.className === "hero-desc" && el.textContent!.includes(profile.tagline)),
     ).toBeInTheDocument();
-    expect(screen.getByText(profile.role)).toBeInTheDocument();
-    expect(screen.getByText(profile.tagline)).toBeInTheDocument();
   });
 
-  it("offers the three calls to action", () => {
+  it("types what he builds inside the headline, read once as a list", () => {
+    render(<Hero />);
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: /I build websites, web apps, stores, dashboards/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("offers the calls to action and the résumé", () => {
     render(<Hero />);
 
     expect(screen.getByRole("link", { name: "View Projects" })).toHaveAttribute(
@@ -32,9 +40,9 @@ describe("Hero", () => {
     expect(resume).toHaveAttribute("download");
   });
 
-  it("makes all three buttons magnetic so the hook can find them", () => {
+  it("makes both buttons magnetic so the hook can find them", () => {
     const { container } = render(<Hero />);
-    expect(container.querySelectorAll(".btn.magnetic")).toHaveLength(3);
+    expect(container.querySelectorAll(".btn.magnetic")).toHaveLength(2);
   });
 
   it("labels its own section for the accessibility tree", () => {

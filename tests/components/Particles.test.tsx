@@ -13,8 +13,8 @@ describe("Particles", () => {
     const ctx = lastContext(contexts);
     expect(ctx.calls.clearRect).toBe(1);
     // The hook's default count.
-    expect(ctx.calls.arc).toBe(70);
-    expect(ctx.calls.fill).toBe(70);
+    expect(ctx.calls.arc).toBe(45);
+    expect(ctx.calls.fill).toBe(45);
   });
 
   it("sizes the canvas to the viewport", () => {
