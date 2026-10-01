@@ -19,6 +19,9 @@ beforeEach(() => {
   // about the reduced-motion branch opt in explicitly.
   setMatchMedia(false);
   window.scrollTo = vi.fn() as unknown as typeof window.scrollTo;
+  // jsdom has no layout, so no scrollIntoView either; the command palette and
+  // its section jumps call it.
+  Element.prototype.scrollIntoView = vi.fn();
 });
 
 afterEach(() => {

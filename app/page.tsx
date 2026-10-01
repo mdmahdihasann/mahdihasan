@@ -3,9 +3,11 @@ import BackToTop from "@/components/home/BackToTop";
 import Background from "@/components/home/Background";
 import ChatBot from "@/components/home/ChatBot";
 import Contact from "@/components/home/Contact";
+import CommandPalette from "@/components/home/CommandPalette";
 import CoursorGlow from "@/components/home/CoursorGlow";
 import Experience from "@/components/home/Experience";
 import Footer from "@/components/home/Footer";
+import GitHubActivity from "@/components/home/GitHubActivity";
 import Hero from "@/components/home/Hero";
 import Interactions from "@/components/home/Interactions";
 import Navber from "@/components/home/Navber";
@@ -16,8 +18,14 @@ import Projects from "@/components/home/Projects";
 import Services from "@/components/home/Services";
 import Skills from "@/components/home/Skills";
 import TechStrip from "@/components/home/TechStrip";
+import { profile } from "@/data/profile";
+import { getGitHubActivity, usernameFromUrl } from "@/lib/server/github";
 
-export default function Page() {
+export default async function Page() {
+  // Cached for six hours inside getGitHubActivity, so the page stays static
+  // and regenerates in the background.
+  const github = await getGitHubActivity(usernameFromUrl(profile.socials.github));
+
   return (
     <>
       <a href="#main" className="skip-link">
@@ -39,9 +47,11 @@ export default function Page() {
           <Skills />
           <Services />
           <Projects />
+          <GitHubActivity data={github} />
           <Process />
           <Experience />
           <Numbers />
+          {/* <Estimate /> ("Plan Your Project") is hidden on request; the component still exists. */}
           <Contact />
         </div>
       </main>
@@ -49,6 +59,7 @@ export default function Page() {
       <Footer />
       <BackToTop />
       <ChatBot />
+      <CommandPalette />
 
       {/* Class-driven behaviour (reveals, magnetic buttons, spotlights) — keep last. */}
       <Interactions />

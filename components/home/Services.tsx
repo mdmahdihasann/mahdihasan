@@ -7,7 +7,11 @@ import PanelHead from "./PanelHead";
 /** Two columns of icon + text rows, ruled apart rather than boxed. */
 const Services = () => (
   <section id="services" className="panel reveal" aria-labelledby="services-title">
-    <PanelHead icon={Briefcase} title="What I Do" id="services-title" />
+    <PanelHead
+      icon={Briefcase}
+      title="What I Do"
+      id="services-title"
+    />
 
     <ul className="service-list">
       {services.map(({ icon: Icon, name, desc }) => (

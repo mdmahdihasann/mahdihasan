@@ -12,11 +12,12 @@ import {
   Send,
   type LucideIcon,
 } from "lucide-react";
-import { useId, useState, type BaseSyntheticEvent } from "react";
+import { useEffect, useId, useState, type BaseSyntheticEvent } from "react";
 import { useForm } from "react-hook-form";
 
 import { profile } from "@/data/profile";
 import { contactSchema, type ContactValues } from "@/lib/contactSchema";
+import { PREFILL_CONTACT, type ContactPrefill } from "@/lib/events";
 import { sendContact } from "@/lib/sendContact";
 
 import Socials from "./Socials";
@@ -51,8 +52,29 @@ const Contact = () => {
     handleSubmit,
     reset,
     getValues,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ContactValues>({ resolver: zodResolver(contactSchema) });
+
+  // The estimator's "Send this plan" fills the subject and message, then
+  // parks the caret at the end of the message so the visitor can add to it.
+  useEffect(() => {
+    const onPrefill = (e: Event) => {
+      const { subject, message } = (e as CustomEvent<ContactPrefill>).detail;
+      setValue("subject", subject, { shouldDirty: true });
+      setValue("message", message, { shouldDirty: true });
+      setSent(false);
+      setSendError(null);
+      window.setTimeout(() => {
+        const box = document.getElementById(`${errId}-message-input`) as HTMLTextAreaElement | null;
+        if (!box) return;
+        box.focus({ preventScroll: true });
+        box.setSelectionRange(box.value.length, box.value.length);
+      }, 700);
+    };
+    window.addEventListener(PREFILL_CONTACT, onPrefill);
+    return () => window.removeEventListener(PREFILL_CONTACT, onPrefill);
+  }, [setValue, errId]);
 
   const onSubmit = async (values: ContactValues, event?: BaseSyntheticEvent) => {
     const form = event?.target instanceof HTMLFormElement ? event.target : null;

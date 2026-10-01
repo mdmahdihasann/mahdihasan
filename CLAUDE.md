@@ -32,7 +32,9 @@ looks unexplained, read the corresponding region of that file rather than invent
 
 `app/page.tsx` composes the whole site in section order: skip link → Background → Particles →
 CoursorGlow → Navber → Hero → TechStrip → `.wrap.panels` (About, Skills, Services, Projects,
-Process, Experience, Numbers, Contact) → Footer → BackToTop → Interactions.
+GitHubActivity, Process, Experience, Numbers, Contact) → Footer → BackToTop → ChatBot →
+CommandPalette → Interactions. `Page` is `async`: it reads GitHub on the server (see below), so tests
+render it with `render(await Page())` and mock `@/lib/server/github`.
 
 The layout follows a Pinterest reference (pin 1096133996835958068) in this site's own palette:
 everything after the hero is a framed `.panel` on one 12-column grid (`.panels`). About + Skills
@@ -58,6 +60,9 @@ setup and teardown:
 | Hero portrait parallax (`--px`/`--py`) and the typed "Websites / Web apps…" line | `HeroPortrait.tsx`, `RoleCycler.tsx` — the hero's load sequence itself is pure CSS keyframes |
 | Stat count-up, skill tabs + bar fills | `StatCounter.tsx`, `Skills.tsx` (own observers; bars fill via `data-filled` — an attribute, because re-rendering `className` on a `.reveal` element wipes the `.in` that `useReveal` added and hides it) |
 | Contact form (react-hook-form + zod, schema shared with the server in `lib/contactSchema.ts`, honeypot field) sent on two channels at once — FormSubmit email from the browser and Telegram via `app/api/contact/route.ts` | `Contact.tsx` + `lib/sendContact.ts` + `lib/server/telegram.ts` |
+| Command palette (Ctrl/⌘+K or the nav search button): every section plus quick actions (copy email, call, CV, open chat, socials), fuzzy filter, combobox/listbox keyboard model | `CommandPalette.tsx`. Islands talk through window events in `lib/events.ts` (`OPEN_PALETTE`, `OPEN_CHAT`, `PREFILL_CONTACT`) instead of shared state. |
+| Project timeline estimator ("Plan Your Project") — **hidden on the owner's request**: not rendered in `app/page.tsx`, no palette entry, no link from Services. The component and its tests still exist; re-add `<Estimate />` after `<Numbers />` to bring it back. Timeline only, no prices. | `Estimate.tsx`, weightings in `data/estimate.ts`, maths in `lib/estimate.ts` |
+| GitHub panel: contribution calendar (hover readout) and streaks — the "Recently pushed" repo list was removed on request, and the repo fetch with it | `GitHubActivity.tsx` (server) + `ContribGraph.tsx`; data from `lib/server/github.ts` — a keyless source, `fetch` with `next.revalidate` 6h (so `/` is ISR), and the panel renders nothing if GitHub can't be reached |
 | Chat assistant (floating launcher, answers about Mahdi, sends hiring questions to email) | `ChatBot.tsx` → `app/api/chat/route.ts`: Claude when `ANTHROPIC_API_KEY` is set, else the free keyword engine `lib/chat/localReply.ts` (English/Banglish/Bangla); facts come from `lib/chat/knowledge.ts`, built from `data/*.ts` — projects deliberately excluded |
 
 `useMagnetic` and `useSpotlight` bind by class name at mount, so markup added later (or rendered
@@ -97,6 +102,9 @@ timeline are transcribed from `public/CV.png`, which is the résumé the Downloa
   `TELEGRAM_CHAT_ID` are set (answers 503 until then); a send counts as delivered if either
   channel succeeds. Env vars are documented in `.env.example`. Both API routes rate-limit per IP
   in memory (`lib/server/rateLimit.ts`), so the site needs a Node host, not a static export.
+- The favicon (`app/icon.png`, 256px, round) and `app/apple-icon.png` (180px, square) are the
+  whole of `public/portrait.jpg` scaled down — the owner wants the full photo, not a face crop;
+  there is no `favicon.ico` any more.
 - `resumeUrl` points at the PNG résumé; swap it for a PDF export when there is one.
 - `app/layout.tsx` sets no `metadataBase` and no OG image, because there is no domain yet; add both
   together when the site gets one.
@@ -159,6 +167,12 @@ custom property to the existing chain rather than a second `transform` declarati
 Classes named `.magnetic`, `.lift`, `.spotlight` and elements with `data-val` attributes are hooks
 for script behavior (magnetic hover, hover raise, card spotlight, skill-bar fills) — preserve them
 when converting markup, or port the behavior to React instead.
+
+Phones (≤600px) get their own block at the end of `globals.css` ("PHONE LAYOUT"): the hero puts
+the portrait above the copy, projects become a horizontal scroll-snap carousel (cards forced visible,
+since off-screen cards never cross the reveal observer), the process rail turns vertical, and the
+GitHub facts are 2×2. Below 960px the back-to-top button is hidden (the tab bar's Home does that) and
+the footer clearance is restated there because the base `footer` rule comes after the phone-nav block.
 
 Layout notes worth keeping: `section` carries `scroll-margin-top: var(--nav-h)` so anchor links
 don't land under the fixed nav; the card grids use `repeat(auto-fit, minmax(...))` rather than a

@@ -6,6 +6,7 @@ import { Fragment, useEffect, useId, useRef, useState, type FormEvent } from "re
 
 import { profile } from "@/data/profile";
 import { localReply, type ChatAction, type ChatTurn } from "@/lib/chat/localReply";
+import { OPEN_CHAT } from "@/lib/events";
 
 type Message = ChatTurn & { actions?: ChatAction[] };
 
@@ -64,6 +65,13 @@ const ChatBot = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
+
+  // The command palette opens the assistant through a window event.
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(OPEN_CHAT, onOpen);
+    return () => window.removeEventListener(OPEN_CHAT, onOpen);
+  }, []);
 
   // Keep the newest message in view.
   useEffect(() => {

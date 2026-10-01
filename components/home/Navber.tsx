@@ -9,16 +9,27 @@ import {
   Layers,
   Mail,
   Route,
+  Search,
   Sparkles,
   UserRound,
   Workflow,
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { useScrollState } from "@/hooks/useScrollState";
 import { profile } from "@/data/profile";
+import { emit, OPEN_PALETTE } from "@/lib/events";
+
+const noSubscribe = () => () => {};
+/** Apple keyboards say ⌘; the server can't know, so it renders Ctrl. */
+const useModKey = () =>
+  useSyncExternalStore(
+    noSubscribe,
+    () => (/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl"),
+    () => "Ctrl",
+  );
 
 export const NAV_LINKS = [
   { href: "#about", label: "About", icon: UserRound },
@@ -48,6 +59,7 @@ const TABS: { href: string; label: string; icon: LucideIcon; owns: (string | nul
 const Navber = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { scrolled, active } = useScrollState(SECTION_IDS);
+  const modKey = useModKey();
 
   // Lock the page behind the menu sheet, and let Escape close it.
   useEffect(() => {
@@ -93,10 +105,22 @@ const Navber = () => {
             ))}
           </ul>
 
-          <a href={profile.resumeUrl} download className="nav-cta">
-            <Download size={15} aria-hidden />
-            <span className="nav-cta-label">Download CV</span>
-          </a>
+          <div className="nav-actions">
+            <button
+              type="button"
+              className="nav-search"
+              aria-label="Search the site"
+              aria-keyshortcuts="Control+K Meta+K"
+              onClick={() => emit(OPEN_PALETTE)}
+            >
+              <Search size={15} aria-hidden />
+              <kbd aria-hidden>{modKey} K</kbd>
+            </button>
+            <a href={profile.resumeUrl} download className="nav-cta">
+              <Download size={15} aria-hidden />
+              <span className="nav-cta-label">Download CV</span>
+            </a>
+          </div>
         </div>
       </nav>
 
