@@ -142,12 +142,17 @@ describe("Contact", () => {
   it("keeps the message and offers a mail-app fallback when sending fails", async () => {
     const user = userEvent.setup();
     mockRelay({ success: "false", message: "This form needs Activation." });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     render(<Contact />);
 
     await fillForm(user);
 
     const status = screen.getByRole("status");
-    await waitFor(() => expect(status).toHaveTextContent(/needs activation/i));
+    // The visitor gets a plain notice, not FormSubmit's setup message.
+    await waitFor(() => expect(status).toHaveTextContent(/form is offline/i));
+    expect(status).not.toHaveTextContent(/activation/i);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
     expect(status).not.toHaveTextContent(/message sent/i);
     expect(
       screen.getByRole("link", { name: /send it from your mail app/i }),

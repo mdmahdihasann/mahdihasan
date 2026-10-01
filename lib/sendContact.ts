@@ -61,7 +61,14 @@ async function viaEmail(values: ContactMessage): Promise<void> {
     | { success?: string | boolean; message?: string }
     | null;
   const ok = res.ok && (data?.success === true || data?.success === "true");
-  if (!ok) throw new ContactSendError(data?.message || GENERIC_FAILURE);
+  if (ok) return;
+  // An unactivated form is the owner's setup step, not something the visitor
+  // can fix, so they get a plain way forward instead of FormSubmit's notice.
+  if (/activat/i.test(data?.message ?? "")) {
+    console.warn(`[contact] FormSubmit is not activated for ${profile.email}: ${data?.message}`);
+    throw new ContactSendError("The contact form is offline for a moment.");
+  }
+  throw new ContactSendError(data?.message || GENERIC_FAILURE);
 }
 
 /** Resolves when at least one channel delivered; otherwise throws the email error. */
