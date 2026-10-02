@@ -1,8 +1,10 @@
 /**
  * Server-only: Mahdi's public GitHub activity for the GitHub panel. The
- * contribution calendar comes from github-contributions-api.jogruber.de (GitHub
- * has no keyless endpoint for it), cached for six hours so the page regenerates
- * in the background (ISR) instead of calling out on every visit.
+ * contribution calendar is read from GitHub's own profile fragment
+ * (github.com/users/<name>/contributions — keyless HTML), with
+ * github-contributions-api.jogruber.de as a fallback. Both are cached for six
+ * hours so the page regenerates in the background (ISR) instead of calling out
+ * on every visit.
  *
  * Any failure resolves to `null` and the panel simply doesn't render.
  */
@@ -51,14 +53,57 @@ export function toWeeks(days: ContribDay[]) {
   return weeks;
 }
 
-async function getJson<T>(url: string): Promise<T | null> {
+async function get(url: string, accept: string): Promise<Response | null> {
   try {
     const res = await fetch(url, {
-      headers: { Accept: "application/json" },
+      headers: { Accept: accept },
       next: { revalidate: REVALIDATE },
       signal: AbortSignal.timeout(8000),
     });
-    return res.ok ? ((await res.json()) as T) : null;
+    return res.ok ? res : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Parses GitHub's contribution-calendar fragment. Each day is a `<td>` with
+ * `data-date` / `data-level` and an id; its count is only in the `<tool-tip
+ * for="id">` text ("No contributions on …" / "3 contributions on …").
+ */
+export function parseContributions(html: string): ContribDay[] {
+  const counts = new Map<string, number>();
+  for (const m of html.matchAll(/<tool-tip[^>]*\sfor="([^"]+)"[^>]*>\s*(\d[\d,]*|No) contributions?/g)) {
+    counts.set(m[1], m[2] === "No" ? 0 : Number(m[2].replace(/,/g, "")));
+  }
+
+  const days: ContribDay[] = [];
+  for (const m of html.matchAll(/<td\s[^>]*class="ContributionCalendar-day"[^>]*>/g)) {
+    const attr = (name: string) => m[0].match(new RegExp(`\\s${name}="([^"]*)"`))?.[1];
+    const date = attr("data-date");
+    const id = attr("id");
+    if (!date) continue;
+    const level = Math.min(4, Math.max(0, Number(attr("data-level") ?? 0))) as ContribDay["level"];
+    days.push({ date, level, count: (id ? counts.get(id) : undefined) ?? (level ? 1 : 0) });
+  }
+  // The table is laid out row by weekday; the panel wants days in date order.
+  return days.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+async function fromGitHub(username: string): Promise<ContribDay[] | null> {
+  const res = await get(`https://github.com/users/${encodeURIComponent(username)}/contributions`, "text/html");
+  const days = res ? parseContributions(await res.text()) : [];
+  return days.length ? days : null;
+}
+
+async function fromMirror(username: string): Promise<ContribDay[] | null> {
+  const res = await get(
+    `https://github-contributions-api.jogruber.de/v4/${encodeURIComponent(username)}?y=last`,
+    "application/json",
+  );
+  try {
+    const json = res ? ((await res.json()) as { contributions?: ContribDay[] }) : null;
+    return json?.contributions?.length ? json.contributions : null;
   } catch {
     return null;
   }
@@ -67,13 +112,9 @@ async function getJson<T>(url: string): Promise<T | null> {
 export async function getGitHubActivity(username: string): Promise<GitHubActivity | null> {
   if (!username) return null;
 
-  const calendar = await getJson<{ total: Record<string, number>; contributions: ContribDay[] }>(
-    `https://github-contributions-api.jogruber.de/v4/${username}?y=last`,
-  );
+  const days = (await fromGitHub(username)) ?? (await fromMirror(username));
+  if (!days) return null;
 
-  if (!calendar?.contributions?.length) return null;
-
-  const days = calendar.contributions;
   const { longest, current } = streaks(days);
   const busiest = days.reduce<ContribDay | null>(
     (best, d) => (d.count > (best?.count ?? 0) ? d : best),
@@ -82,7 +123,7 @@ export async function getGitHubActivity(username: string): Promise<GitHubActivit
 
   return {
     username,
-    total: calendar.total.lastYear ?? days.reduce((sum, d) => sum + d.count, 0),
+    total: days.reduce((sum, d) => sum + d.count, 0),
     weeks: toWeeks(days),
     longestStreak: longest,
     currentStreak: current,
