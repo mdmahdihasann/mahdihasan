@@ -22,7 +22,7 @@ describe("ProjectLink", () => {
     // The old markup used href="#projects" here, which looked clickable but
     // only scrolled back to the grid the visitor was already reading.
     expect(screen.queryByRole("link")).toBeNull();
-    expect(screen.getByText(/github/i)).toHaveClass("muted");
+    expect(screen.getByText(/github/i)).toHaveAttribute("data-muted");
   });
 });
 

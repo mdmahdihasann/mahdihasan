@@ -56,11 +56,14 @@ const RoleCycler = ({ words }: { words: string[] }) => {
   }, [reduced, words]);
 
   return (
-    <span className="hero-builds">
+    // The middle line's mask child: it slides up with the other lines and its
+    // palette keeps shifting. min-height holds the line open while the word is
+    // fully erased.
+    <span className="text-palette block min-h-[1em] animate-[lineUp_1.1s_var(--ease-smooth)_.36s_both,paletteShift_8s_linear_infinite] whitespace-nowrap">
       <span className="sr-only">{words.join(", ").toLowerCase()}</span>
       <span aria-hidden>
         {reduced ? words[0] : text}
-        <span className="caret" />
+        <span className="ml-[.06em] inline-block h-[.78em] w-[.07em] animate-blink bg-khaki align-[-.04em]" />
       </span>
     </span>
   );

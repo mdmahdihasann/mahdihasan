@@ -38,7 +38,7 @@ describe("StatCounter", () => {
       <StatCounter count={100} suffix="%" label="CLIENT SATISFACTION" />,
     );
 
-    expect(container.querySelector(".stat-num")).toHaveTextContent("0%100%");
+    expect(container.querySelector("[data-slot=stat-num]")).toHaveTextContent("0%100%");
   });
 
   it("counts up to the target once revealed", () => {
@@ -55,7 +55,7 @@ describe("StatCounter", () => {
       vi.advanceTimersByTime(COUNT_DURATION_MS + 100);
     });
 
-    const [digits] = container.querySelectorAll(".stat-num span");
+    const [digits] = container.querySelectorAll("[data-slot=stat-num] span");
     expect(digits).toHaveTextContent("100");
   });
 
@@ -67,7 +67,7 @@ describe("StatCounter", () => {
     );
 
     // No intersection needed: the number is there from the first paint.
-    const [digits] = container.querySelectorAll(".stat-num span");
+    const [digits] = container.querySelectorAll("[data-slot=stat-num] span");
     expect(digits).toHaveTextContent("16");
   });
 });

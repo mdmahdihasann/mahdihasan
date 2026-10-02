@@ -5,14 +5,14 @@
 const Background = () => {
   return (
     <>
-      <div className="bg-layer bg-aurora" aria-hidden>
+      <div className="pointer-events-none fixed inset-0 z-0 aurora" aria-hidden>
         <i />
         <i />
         <i />
         <i />
       </div>
-      <div className="bg-layer bg-light" aria-hidden />
-      <div className="bg-layer bg-grain" aria-hidden />
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(ellipse_70%_55%_at_50%_0%,rgba(95,140,104,.14),transparent_70%),linear-gradient(180deg,transparent_45%,rgba(20,31,24,.85))]" aria-hidden />
+      <div className="pointer-events-none fixed inset-0 z-0 grain" aria-hidden />
     </>
   );
 };

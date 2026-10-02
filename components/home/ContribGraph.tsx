@@ -3,6 +3,11 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import type { ContribDay } from "@/lib/server/github";
+import { cn } from "@/lib/utils";
+
+/** One square of the calendar, shaded by its contribution level (0–4). */
+const day =
+  "aspect-square rounded-[3px] bg-fg-1/6 data-[level='1']:bg-leaf/26 data-[level='2']:bg-leaf/48 data-[level='3']:bg-leaf/74 data-[level='4']:bg-leaf";
 
 /** UTC on both sides of hydration, so server and browser print the same date. */
 const longDate = new Intl.DateTimeFormat("en-US", {
@@ -46,17 +51,20 @@ const ContribGraph = ({ weeks, total }: { weeks: ContribDay[][]; total: number }
   });
 
   return (
-    <div className="gh-graph-wrap">
-      <div className="gh-scroll" ref={scrollRef}>
+    <div>
+      <div
+        className="overflow-x-auto pb-1.5 [scrollbar-color:var(--color-olive)_transparent] [scrollbar-width:thin]"
+        ref={scrollRef}
+      >
         <div
-          className="gh-graph"
+          className="grid min-w-[calc(var(--weeks)*13px)] grid-cols-[repeat(var(--weeks),minmax(10px,1fr))] gap-[3px]"
           role="img"
           aria-label={`Contribution calendar: ${total} contributions in the last year`}
           style={{ "--weeks": weeks.length } as CSSProperties}
           onMouseLeave={() => setHovered(null)}
         >
           {months.map(({ w, label }) => (
-            <span key={`m-${w}`} className="gh-month" style={{ gridColumn: w + 1 }} aria-hidden>
+            <span key={`m-${w}`} className="row-start-1 pb-[3px] text-[11px] whitespace-nowrap text-fg-3" style={{ gridColumn: w + 1 }} aria-hidden>
               {label}
             </span>
           ))}
@@ -64,7 +72,12 @@ const ContribGraph = ({ weeks, total }: { weeks: ContribDay[][]; total: number }
             week.map((day) => (
               <span
                 key={day.date}
-                className="gh-day"
+                className={cn(
+                  day,
+                  "outline outline-offset-1 outline-transparent transition-[outline-color] duration-150 hover:outline-khaki",
+                  // The year sweeps in week by week, oldest first.
+                  "revealed:animate-[dayIn_.5s_var(--ease-spring)_calc(.15s_+_var(--w)*11ms)_backwards]",
+                )}
                 data-level={day.level}
                 style={
                   {
@@ -80,14 +93,18 @@ const ContribGraph = ({ weeks, total }: { weeks: ContribDay[][]; total: number }
         </div>
       </div>
 
-      <div className="gh-graph-foot">
-        <p className="gh-readout" aria-hidden>
+      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
+        <p className="min-h-[1.6em] text-[13px] text-fg-2 tabular-nums" aria-hidden>
           {hovered ? describeDay(hovered) : "Point at a day to see what happened"}
         </p>
-        <div className="gh-legend" aria-hidden>
+        <div className="flex items-center gap-1 text-[12px] text-fg-3" aria-hidden>
           Less
           {[0, 1, 2, 3, 4].map((l) => (
-            <span key={l} className="gh-day" data-level={l} />
+            <span
+              key={l}
+              className={cn(day, "w-[11px] first-of-type:ml-1 last-of-type:mr-1")}
+              data-level={l}
+            />
           ))}
           More
         </div>

@@ -26,7 +26,8 @@ Tests are Vitest + Testing Library in `tests/`, configured by `vitest.config.mts
 
 A one-page personal portfolio, **ported from a single-file vanilla site into the Next.js 16 App
 Router**. The design's source of truth is `../portfoliotest/index(2).html` (1110 lines, outside this
-repo and untracked): a `<style>` block (lines 9–507, copied verbatim into `app/globals.css`), the
+repo and untracked): a `<style>` block (lines 9–507, originally copied into `app/globals.css`, since converted to
+Tailwind utilities), the
 markup (lines 517–733), and a `<script>` block (lines 735–1108). If a section's styling or behavior
 looks unexplained, read the corresponding region of that file rather than inventing something.
 
@@ -111,41 +112,63 @@ timeline are transcribed from `public/CV.png`, which is the résumé the Downloa
 
 ## Styling
 
-Two systems coexist deliberately:
+**Everything is Tailwind v4** (`@import "tailwindcss"`, PostCSS-only config, no
+`tailwind.config`). Each component styles itself with utilities in its own `className`; there are no
+per-section stylesheets. `app/globals.css` holds only what utilities can't express:
 
-1. **`app/globals.css` is hand-written plain CSS copied from the source page** — the real design
-   system. The palette is lifted from `public/portrait.jpg`: `--bg` (#1a271e) is the photo's own
-   backdrop, so the edge-masked portrait sits on the page with no seam — change one and you must
-   change the other. `:root` holds `--sage`, `--khaki`, `--olive`, `--leaf` (with `--primary` /
-   `--secondary` / `--accent` kept as aliases), `--bg`, `--text-1..3` and `--ease`, plus the vocabulary every `components/home/*` component uses:
-   `.wrap` (page container), `.panel` + `.panel-head` (section frame), `.reveal` / `.reveal-scale`
-   (animate in when JS adds `.in`), `.lift` (hover raise), `.spotlight` (pointer-tracked
-   highlight), `.btn` / `.btn-sm`, `.magnetic`. Section styles are grouped by banner comments
-   matching the section ids.
-2. **Tailwind v4** (`@import "tailwindcss"`, PostCSS-only config, no `tailwind.config`) — used only
-   for the few utilities on `<html>`/`<body>` in `app/layout.tsx`.
+1. **`@theme` tokens.** The palette is lifted from `public/portrait.jpg`: `bg` (#1a271e) is the
+   photo's own backdrop. The hero shows `public/portrait-cutout.png` — the same photo with the
+   backdrop removed (rembg, isnet-general-use) — so no photo background shows around him; regenerate
+   it if `portrait.jpg` changes. `portrait.jpg` is still the icon and chat avatar. Colours: `bg`, `bg-deep`, `bg-elevated`, `sage`, `khaki`, `khaki-hi`,
+   `olive`, `leaf`, `ink` (dark text on khaki), `fg-1..3` (text), `danger`, `card`, `line`,
+   `line-strong` — so `text-fg-2`, `border-line`, `bg-sage/8` etc. Easing: `ease-smooth`,
+   `ease-spring`. Fonts: `font-display` / `font-body` / `font-mono` (fed by `next/font` in
+   `app/layout.tsx` through `@theme inline`). A few named animations (`animate-live-ping`,
+   `animate-marquee`, …); one-off timings use `animate-[name_1s_var(--ease-smooth)_.7s_both]`.
+2. **`@layer base`**: body, headings, the site-wide `:focus-visible` ring, `kbd`, the scrollbar,
+   `section { scroll-margin-top }` and the reduced-motion kill switch.
+3. **`@utility` classes** for script hooks and layered effects: `reveal` / `reveal-scale`, `lift`,
+   `magnetic`, `ripple`, `spotlight` (all driven by hooks, see below), `panel` (section frame + rim
+   sweep), `glow-border`, `aurora` / `grain` (background), `halo-light` / `halo-glow` /
+   `portrait-cutout` (hero portrait), `text-palette` (the typed hero word), `process-rail` /
+   `process-node`, `skill-fill`, `range-khaki`, `fade-edges-x`, `scrollbar-none`.
+4. **All `@keyframes`.**
 
-Spacing is fluid: section padding, gutters, grid gaps and section-head margins all use `clamp()`,
-so nothing needs a per-breakpoint override to stay proportional. Keep new spacing on that pattern
-rather than adding fixed pixel values with media queries.
+Shared class strings live in `lib/ui.ts`: `wrap` (page container), `btn(variant, size, extra)`,
+`khakiTile`, `ringIcon`, `liveDot`, `hoverKhaki`, `floatingPane` and the panel `span` widths.
+Keep shared strings there, not in a `"use client"` component module: a Server Component that imports
+a plain string from a client module gets a client reference instead of the string (the hero chip
+lost its surface that way once). `PanelHead.tsx` exports `panelLink` for a panel head's action slot.
+
+Conventions inside the utilities:
+
+- Breakpoints are the design's own, as `max-[600px]:`, `max-[900px]:`, `max-[960px]:` (phone nav),
+  `max-[1100px]:` etc. Larger `max-*` variants are emitted first, so a smaller breakpoint always
+  wins — a `max-[560px]` rule under a `max-[600px]` one would be dead.
+- Animations that start when a panel scrolls in use the custom `revealed:` variant (any ancestor
+  with `.in`); `useReveal` adds that class.
+- State that tests or the menu read stays as a plain class or attribute (`open`, `scrolled`,
+  `show`, `in`, `aria-current`, `data-filled`, `data-level`) and is styled through `group-[.open]/…:`,
+  `aria-[current=true]:` or `data-[…]:` variants. Tests select by `data-slot` / `data-*`
+  attributes, never by utility classes.
+- Write spaces inside arbitrary `calc()` as underscores: `pt-[calc(var(--nav-h)_+_28px)]`.
+- Arbitrary colours use the tokens with an opacity modifier (`bg-khaki/8`) rather than raw `rgba`,
+  except inside gradients and shadows.
+
+Spacing is fluid: section padding, gutters, grid gaps and section-head margins all use `clamp()`
+(`p-[clamp(20px,3.2vw,48px)]`), so nothing needs a per-breakpoint override to stay proportional.
+Keep new spacing on that pattern.
 
 Project cards get their artwork from `components/home/ProjectThumb.tsx` — inline SVG UI mockups
 (`storefront`, `cms`, `dashboard`, `app`, `landing`, `portfolio`) painted in translucent white over
 each card's own gradient, so there are no image files to ship. A project with a real screenshot sets
 `image` in `data/projects.ts` and renders through `next/image` instead.
 
-The three display faces load through `next/font/google` in `app/layout.tsx` and feed the
-`--font-display` / `--font-body` / `--font-mono` tokens, which are declared *after* the Tailwind
-import so they win. Note the `:root` block must stay below `@import "tailwindcss"` for that.
-
 shadcn is configured (`components.json`, `base-nova` style on `@base-ui/react`) and
 `components/ui/button.tsx` was generated, but **nothing imports it and its theme tokens are not
 loaded** — the `@import "shadcn/tailwind.css"` line was removed because that path is not exported by
 the `shadcn` package and broke the CSS build. Adding a shadcn component means bringing its tokens in
-first.
-
-Portfolio sections use the hand-written classes, not Tailwind utilities. Follow the existing class
-vocabulary when adding markup; reach for Tailwind/shadcn only for genuinely new UI.
+first. `components/home/Testimonials.tsx` is dead and still carries the old pre-Tailwind class names.
 
 ### One transform per element
 
@@ -154,35 +177,36 @@ declaration out of custom properties, and the hooks only set those properties:
 
 | Property | Set by | Effect |
 | --- | --- | --- |
-| `--rv-y`, `--rv-s` | `.reveal` / `.reveal.in` in CSS | scroll entrance |
-| `--lift` | `.lift.in:hover` in CSS | hover raise |
+| `--rv-y`, `--rv-s` | the `reveal` utility (`.reveal` / `.reveal.in`) | scroll entrance |
+| `--lift` | the `lift` utility (`.lift.in:hover`) | hover raise |
 | `--mag-x`, `--mag-y`, `--press` | `useMagnetic` + `:active` | magnetic buttons |
 | `--mx`, `--my` | `useSpotlight` | paints a gradient, no transform at all |
 
 This is deliberate. The previous `useTilt` hook assigned `style.transform` on `.project-card`,
 `.service-card` and `.skill-cat` — the same property `.reveal` animates — so hovering a card before
 it had revealed pinned it at `opacity: 0` forever. If you add a new hover or pointer effect, add a
-custom property to the existing chain rather than a second `transform` declaration.
+custom property to the existing chain rather than a second `transform` declaration. Tailwind's own
+`translate-*` / `scale-*` / `rotate-*` utilities write the separate `translate` / `scale` / `rotate`
+properties, not `transform`, so they compose with the chain safely.
 
-Classes named `.magnetic`, `.lift`, `.spotlight` and elements with `data-val` attributes are hooks
-for script behavior (magnetic hover, hover raise, card spotlight, skill-bar fills) — preserve them
+Classes named `.magnetic`, `.lift`, `.spotlight`, `.reveal` and the `data-filled` attribute are hooks
+for script behavior (magnetic hover, hover raise, card spotlight, scroll entrance, skill-bar fills) — preserve them
 when converting markup, or port the behavior to React instead.
 
-Phones (≤600px) get their own block at the end of `globals.css` ("PHONE LAYOUT"): the hero puts
-the portrait above the copy, projects become a horizontal scroll-snap carousel (cards forced visible,
-since off-screen cards never cross the reveal observer), the process rail turns vertical, and the
-GitHub facts are 2×2. Below 960px the back-to-top button is hidden (the tab bar's Home does that) and
-the footer clearance is restated there because the base `footer` rule comes after the phone-nav block.
+Phones (≤600px) get `max-[600px]:` variants in each component: the hero puts the portrait above the
+copy, projects become a horizontal scroll-snap carousel (cards forced visible, since off-screen cards
+never cross the reveal observer), the process rail turns vertical (inside the `process-rail`
+utility), and the GitHub facts are 2×2. Below 960px the back-to-top button is hidden (the tab bar's
+Home does that) and the footer and floating buttons clear the tab bar (`--fab-b` in `:root`).
 
 Layout notes worth keeping: `section` carries `scroll-margin-top: var(--nav-h)` so anchor links
 don't land under the fixed nav; the card grids use `repeat(auto-fit, minmax(...))` rather than a
-fixed column count; and `--text-3` is `#7c88a6` because the original `#6b7690` sat at 4.48:1 on
-`--bg` and missed WCAG AA.
+fixed column count; and `fg-3` is `#8fa08e` (5.4:1 on `bg`) so the quietest text still passes WCAG AA.
 
 ## Conventions
 
 - Path alias `@/*` maps to the repo root (`@/components`, `@/lib/utils`, `@/hooks`).
-- `cn()` in `lib/utils.ts` (clsx + tailwind-merge) is the only shared utility.
+- `cn()` in `lib/utils.ts` (clsx + tailwind-merge) merges class lists; shared class strings are in `lib/ui.ts`.
 - Components are arrow functions with a default export, one section per file under `components/home/`.
 - Content lives in `data/*.ts` as typed exported values (`profile`, `projects`, `skillGroups`,
   `services`, `experience`, `stats`, `process`) — edit those, not the JSX, to change what the site says.

@@ -22,9 +22,9 @@ const DhakaTime = () => {
   const time = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   return (
-    <p className="local-time">
+    <p className="flex items-baseline gap-2 font-display text-[clamp(30px,2.8vw,40px)] leading-none font-bold tracking-[-0.03em] text-fg-1 tabular-nums">
       <time suppressHydrationWarning>{time}</time>
-      <span className="tz">GMT+6</span>
+      <span className="font-body text-[13px] font-medium tracking-normal text-sage">GMT+6</span>
     </p>
   );
 };

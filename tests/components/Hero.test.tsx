@@ -11,7 +11,7 @@ describe("Hero", () => {
     expect(screen.getByText(profile.name)).toBeInTheDocument();
     expect(screen.getByText(profile.availability)).toBeInTheDocument();
     expect(
-      screen.getByText((_, el) => el?.className === "hero-desc" && el.textContent!.includes(profile.tagline)),
+      screen.getByText((_, el) => el?.tagName === "P" && el.textContent!.includes(profile.tagline)),
     ).toBeInTheDocument();
   });
 
@@ -42,7 +42,7 @@ describe("Hero", () => {
 
   it("makes both buttons magnetic so the hook can find them", () => {
     const { container } = render(<Hero />);
-    expect(container.querySelectorAll(".btn.magnetic")).toHaveLength(2);
+    expect(container.querySelectorAll("a.magnetic")).toHaveLength(2);
   });
 
   it("labels its own section for the accessibility tree", () => {

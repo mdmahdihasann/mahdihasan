@@ -63,7 +63,7 @@ describe("Page", () => {
     expect(panels).toHaveLength(9);
     panels.forEach((panel) => {
       expect(panel.querySelector("h2"), panel.id).not.toBeNull();
-      expect(panel.querySelector(".panel-icon"), panel.id).not.toBeNull();
+      expect(panel.querySelector("[data-slot=panel-icon]"), panel.id).not.toBeNull();
     });
   });
 

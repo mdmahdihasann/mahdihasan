@@ -6,7 +6,7 @@ import CommandPalette from "@/components/home/CommandPalette";
 import { emit, OPEN_CHAT, OPEN_PALETTE } from "@/lib/events";
 
 const openWithShortcut = () => fireEvent.keyDown(window, { key: "k", ctrlKey: true });
-const dialog = () => document.querySelector(".palette");
+const dialog = () => document.querySelector("[data-slot=palette]");
 
 describe("CommandPalette", () => {
   it("opens on Ctrl+K, focuses the search box and closes on Escape", async () => {

@@ -1,4 +1,5 @@
 import { profile } from "@/data/profile";
+import { cn } from "@/lib/utils";
 
 type SocialLink = { label: string; href: string; path: string };
 
@@ -28,8 +29,18 @@ export const SOCIALS: SocialLink[] = [
 /** `mailto:` and `tel:` should open in place, not in a new tab. */
 const opensInNewTab = (href: string) => /^https?:/i.test(href);
 
-const Socials = ({ compact = false }: { compact?: boolean }) => (
-  <ul className={`social-row${compact ? " compact" : ""}`}>
+type SocialsProps = {
+  compact?: boolean;
+  /** Extra classes for each icon (the hero squares its tiles). */
+  iconClassName?: string;
+  className?: string;
+};
+
+const Socials = ({ compact = false, iconClassName, className }: SocialsProps) => (
+  <ul
+    data-compact={compact || undefined}
+    className={cn("relative z-1 flex gap-2.5", className)}
+  >
     {SOCIALS.map(({ label, href, path }) => {
       const external = opensInNewTab(href);
 
@@ -37,7 +48,11 @@ const Socials = ({ compact = false }: { compact?: boolean }) => (
         <li key={label}>
           <a
             href={href}
-            className="social-ic"
+            className={cn(
+              "flex items-center justify-center rounded-full border border-line-strong text-fg-2 transition-[color,border-color,background-color,translate] duration-300 ease-smooth hover:-translate-y-[3px] hover:border-khaki hover:bg-khaki hover:text-ink",
+              compact ? "size-10" : "size-[46px]",
+              iconClassName,
+            )}
             aria-label={label}
             target={external ? "_blank" : undefined}
             rel={external ? "noreferrer noopener" : undefined}

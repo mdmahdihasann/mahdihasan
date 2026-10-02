@@ -10,7 +10,7 @@ describe("Estimate", () => {
     const user = userEvent.setup();
     render(<Estimate />);
 
-    const figure = () => document.querySelector(".est-figure")?.textContent;
+    const figure = () => document.querySelector("[data-slot=est-figure]")?.textContent;
     const before = figure();
 
     await user.click(screen.getByRole("radio", { name: /web app/i }));

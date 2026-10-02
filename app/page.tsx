@@ -19,6 +19,8 @@ import Services from "@/components/home/Services";
 import Skills from "@/components/home/Skills";
 import TechStrip from "@/components/home/TechStrip";
 import { profile } from "@/data/profile";
+import { wrap } from "@/lib/ui";
+import { cn } from "@/lib/utils";
 import { getGitHubActivity, usernameFromUrl } from "@/lib/server/github";
 
 export default async function Page() {
@@ -28,7 +30,10 @@ export default async function Page() {
 
   return (
     <>
-      <a href="#main" className="skip-link">
+      <a
+        href="#main"
+        className="fixed top-2.5 left-2.5 z-200 -translate-y-[160%] rounded-[10px] border border-khaki bg-bg-elevated px-[18px] py-2.5 font-body text-[13px] text-fg-1 transition-transform duration-[250ms] ease-smooth focus-visible:translate-y-0"
+      >
         Skip to content
       </a>
 
@@ -42,7 +47,12 @@ export default async function Page() {
         <TechStrip />
 
         {/* Every section below is a panel on one grid; pairs share a row. */}
-        <div className="wrap panels">
+        <div
+          className={cn(
+            wrap,
+            "relative z-2 grid grid-cols-12 gap-x-[clamp(14px,2vw,30px)] gap-y-[clamp(18px,4.6vw,60px)] pb-[clamp(18px,4.6vw,60px)] max-[600px]:gap-[30px]",
+          )}
+        >
           <About />
           <Skills />
           <Services />

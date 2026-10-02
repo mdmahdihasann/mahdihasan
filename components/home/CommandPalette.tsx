@@ -19,6 +19,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { profile } from "@/data/profile";
 import { prefersReducedMotion } from "@/lib/motion";
 import { emit, OPEN_CHAT, OPEN_PALETTE } from "@/lib/events";
+import { cn } from "@/lib/utils";
 
 import { NAV_LINKS } from "./Navber";
 
@@ -218,16 +219,33 @@ const CommandPalette = () => {
   const browsing = !query.trim();
 
   return (
-    <div className={`palette${open ? " open" : ""}`} inert={!open}>
-      <div className="palette-scrim" aria-hidden onClick={close} />
+    <div
+      data-slot="palette"
+      className={cn(
+        "group/palette fixed inset-0 z-150 flex items-start justify-center px-4 pt-[min(14vh,120px)] pb-4 max-[600px]:pt-3",
+        open ? "open pointer-events-auto" : "pointer-events-none",
+      )}
+      inert={!open}
+    >
       <div
-        className="palette-panel"
+        className="absolute inset-0 bg-[rgba(10,16,12,.62)] opacity-0 backdrop-blur-[6px] transition-opacity duration-[180ms] group-[.open]/palette:opacity-100 group-[.open]/palette:duration-300"
+        aria-hidden
+        onClick={close}
+      />
+      {/* Exits faster than it arrives; the arrival sharpens out of a slight blur. */}
+      <div
+        className={cn(
+          "relative flex max-h-[min(540px,calc(100svh_-_140px))] w-[min(600px,100%)] flex-col overflow-hidden rounded-[18px] border border-sage/22 bg-[linear-gradient(180deg,rgba(32,48,42,.97),rgba(20,31,24,.98))] shadow-[0_30px_70px_-20px_rgba(0,0,0,.8),inset_0_1px_0_rgba(238,240,228,.06)]",
+          open
+            ? "translate-y-0 scale-100 opacity-100 blur-none transition-[opacity,translate,scale,filter] duration-300 ease-spring"
+            : "-translate-y-2.5 scale-97 opacity-0 blur-[4px] transition-[opacity,translate,scale,filter] duration-[160ms] ease-smooth",
+        )}
         role="dialog"
         aria-modal="true"
         aria-label="Command menu"
         onKeyDown={onKeyDown}
       >
-        <div className="palette-search">
+        <div className="flex items-center gap-3 border-b border-line px-[18px] py-4 text-sage">
           <Search size={18} aria-hidden />
           <input
             ref={inputRef}
@@ -240,6 +258,7 @@ const CommandPalette = () => {
             placeholder="Jump to a section or run an action…"
             spellCheck={false}
             autoComplete="off"
+            className="min-w-0 flex-1 border-none bg-transparent text-[16px] text-fg-1 caret-khaki outline-none placeholder:text-fg-3 focus-visible:outline-none"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -250,9 +269,11 @@ const CommandPalette = () => {
           <kbd>Esc</kbd>
         </div>
 
-        <ul className="palette-list" id={`${uid}-list`} role="listbox" aria-label="Commands" ref={listRef}>
+        <ul
+          className="overflow-y-auto overscroll-contain p-2"
+          id={`${uid}-list`} role="listbox" aria-label="Commands" ref={listRef}>
           {results.length === 0 && (
-            <li className="palette-empty" role="presentation">
+            <li className="px-3 py-[26px] text-center text-[14px] text-fg-3" role="presentation">
               Nothing matches &ldquo;{query.trim()}&rdquo;. Try &ldquo;contact&rdquo; or &ldquo;cv&rdquo;.
             </li>
           )}
@@ -264,7 +285,10 @@ const CommandPalette = () => {
             return (
               <li key={cmd.id} role="presentation">
                 {heading && (
-                  <div className="palette-group" role="presentation">
+                  <div
+                    className="px-2.5 pt-3 pb-1.5 text-[11.5px] font-semibold tracking-[.06em] text-fg-3 uppercase"
+                    role="presentation"
+                  >
                     {heading}
                   </div>
                 )}
@@ -273,17 +297,20 @@ const CommandPalette = () => {
                   role="option"
                   aria-selected={i === active}
                   data-index={i}
-                  className="palette-item"
+                  className="group/item flex cursor-pointer items-center gap-3 rounded-[11px] px-2.5 py-[9px] text-[14.5px] text-fg-2 aria-selected:bg-sage/11 aria-selected:text-fg-1 aria-selected:shadow-[inset_0_0_0_1px_rgba(169,198,162,.2)]"
                   onMouseMove={() => i !== active && setActive(i)}
                   onClick={() => run(cmd)}
                 >
-                  <span className="palette-ic" aria-hidden>
+                  <span
+                    className="flex size-[30px] shrink-0 items-center justify-center rounded-[9px] border border-line text-sage transition-[color,border-color,background-color] duration-200 group-aria-selected/item:border-khaki/35 group-aria-selected/item:bg-khaki/6 group-aria-selected/item:text-khaki"
+                    aria-hidden
+                  >
                     <Icon size={16} strokeWidth={1.9} />
                   </span>
-                  <span className="palette-label">{isCopy ? "Email copied" : cmd.label}</span>
-                  {cmd.hint && !isCopy && <span className="palette-hint">{cmd.hint}</span>}
+                  <span className="min-w-0 flex-1 truncate">{isCopy ? "Email copied" : cmd.label}</span>
+                  {cmd.hint && !isCopy && <span className="text-[12.5px] whitespace-nowrap text-fg-3 tabular-nums max-[600px]:hidden">{cmd.hint}</span>}
                   {i === active && (
-                    <span className="palette-go" aria-hidden>
+                    <span className="flex text-khaki" aria-hidden>
                       {cmd.group === "Go to" ? <ArrowRight size={15} /> : <CornerDownLeft size={15} />}
                     </span>
                   )}
@@ -293,7 +320,10 @@ const CommandPalette = () => {
           })}
         </ul>
 
-        <div className="palette-foot" aria-hidden>
+        <div
+          className="flex gap-[18px] border-t border-line px-[18px] py-2.5 text-[12px] text-fg-3 max-[600px]:hidden [&>span]:inline-flex [&>span]:items-center [&>span]:gap-[5px]"
+          aria-hidden
+        >
           <span><kbd>↑</kbd><kbd>↓</kbd> move</span>
           <span><kbd>↵</kbd> select</span>
           <span><kbd>Esc</kbd> close</span>

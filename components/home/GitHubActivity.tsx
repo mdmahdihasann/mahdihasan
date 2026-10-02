@@ -1,9 +1,11 @@
 import { ArrowUpRight, GitCommitHorizontal } from "lucide-react";
 
 import type { GitHubActivity as Activity } from "@/lib/server/github";
+import { span } from "@/lib/ui";
+import { cn } from "@/lib/utils";
 
 import ContribGraph from "./ContribGraph";
-import PanelHead from "./PanelHead";
+import PanelHead, { panelLink } from "./PanelHead";
 
 const shortDate = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -37,24 +39,26 @@ const GitHubActivity = ({ data }: { data: Activity | null }) => {
   ];
 
   return (
-    <section id="github" className="panel reveal" aria-labelledby="github-title">
+    <section id="github" className={cn("panel reveal", span.full)} aria-labelledby="github-title">
       <PanelHead
         icon={GitCommitHorizontal}
         title="GitHub Activity"
         id="github-title"
         action={
-          <a href={profileUrl} className="panel-link" target="_blank" rel="noreferrer noopener">
+          <a href={profileUrl} className={panelLink} target="_blank" rel="noreferrer noopener">
             @{data.username} <ArrowUpRight size={15} aria-hidden />
             <span className="sr-only"> (opens in a new tab)</span>
           </a>
         }
       />
 
-      <dl className="gh-facts">
+      <dl className="mb-[clamp(18px,2.2vw,24px)] grid grid-cols-[repeat(auto-fit,minmax(min(100%,170px),1fr))] gap-x-[22px] gap-y-3.5 max-[600px]:grid-cols-2 max-[600px]:gap-x-4">
         {facts.map((f) => (
           <div key={f.label}>
-            <dt>{f.label}</dt>
-            <dd>{f.value}</dd>
+            <dt className="text-[12.5px] text-fg-3">{f.label}</dt>
+            <dd className="mt-0.5 font-display text-[clamp(20px,1.9vw,25px)] font-bold tracking-[-0.02em] text-fg-1 tabular-nums max-[600px]:text-[18px]">
+              {f.value}
+            </dd>
           </div>
         ))}
       </dl>

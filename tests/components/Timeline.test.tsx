@@ -21,20 +21,20 @@ describe("Timeline", () => {
   it("marks only the first entry as the current role", () => {
     const { container } = render(<Timeline />);
 
-    expect(screen.getByText("Current role")).toHaveClass("tl-chip", "current");
-    expect(container.querySelectorAll(".tl-chip.current")).toHaveLength(1);
-    expect(container.querySelectorAll(".tl-item.current")).toHaveLength(1);
+    expect(screen.getByText("Current role")).toHaveAttribute("data-current");
+    expect(container.querySelectorAll("[data-slot=tl-chip][data-current]")).toHaveLength(1);
+    expect(container.querySelectorAll("li[data-current]")).toHaveLength(1);
   });
 
   it("says whether each remaining entry is work or study", () => {
     const { container } = render(<Timeline />);
 
-    const chips = Array.from(container.querySelectorAll(".tl-chip"), (chip) =>
+    const chips = Array.from(container.querySelectorAll("[data-slot=tl-chip]"), (chip) =>
       chip.textContent?.trim(),
     );
     // The current role's chip says so instead of repeating "Work".
     expect(chips).toEqual(["Current role", "Education", "Education"]);
-    expect(container.querySelectorAll(".tl-item.education")).toHaveLength(
+    expect(container.querySelectorAll("li[data-kind=education]")).toHaveLength(
       experience.filter((entry) => entry.kind === "education").length,
     );
   });
@@ -61,7 +61,7 @@ describe("Socials", () => {
 
   it("shrinks in compact mode for the footer", () => {
     const { container } = render(<Socials compact />);
-    expect(container.querySelector(".social-row")).toHaveClass("compact");
+    expect(container.querySelector("ul")).toHaveAttribute("data-compact");
   });
 });
 

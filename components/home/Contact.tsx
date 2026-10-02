@@ -12,15 +12,61 @@ import {
   Send,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useId, useState, type BaseSyntheticEvent } from "react";
+import {
+  cloneElement,
+  useEffect,
+  useId,
+  useState,
+  type BaseSyntheticEvent,
+  type ReactElement,
+} from "react";
 import { useForm } from "react-hook-form";
 
 import { profile } from "@/data/profile";
 import { contactSchema, type ContactValues } from "@/lib/contactSchema";
 import { PREFILL_CONTACT, type ContactPrefill } from "@/lib/events";
 import { sendContact } from "@/lib/sendContact";
+import { btn, hoverKhaki, khakiTile, liveDot, ringIcon, span } from "@/lib/ui";
+import { cn } from "@/lib/utils";
 
 import Socials from "./Socials";
+
+/**
+ * A boxed field whose label rides the top edge once it is filled or focused
+ * (the `placeholder=" "` on each control is what `:placeholder-shown` reads).
+ * Bottom padding reserves the error line, so a message never overlaps the
+ * field below. `id` names the error; the control gets `${id}-input`.
+ */
+const Field = ({
+  id,
+  label,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  children: ReactElement<{ id?: string; className?: string }>;
+}) => (
+  <div className="relative pb-[18px]">
+    {cloneElement(children, {
+      id: `${id}-input`,
+      className:
+        "peer block w-full resize-none rounded-[10px] border border-line-strong bg-fg-1/3 px-3.5 pt-[13px] pb-[11px] font-body text-[14.5px] text-fg-1 caret-khaki transition-[border-color,background-color] duration-[250ms] hover:border-sage/35 focus:border-khaki focus:bg-khaki/4 focus:outline-none aria-invalid:border-danger aria-invalid:focus:border-danger [textarea&]:min-h-[104px]",
+    })}
+    <label
+      htmlFor={`${id}-input`}
+      className="pointer-events-none absolute top-3 left-[11px] rounded px-1 text-[14.5px] text-fg-3 transition-[top,font-size,color,background-color] duration-[250ms] ease-smooth peer-focus:-top-2 peer-focus:bg-[#18241c] peer-focus:text-[11.5px] peer-focus:text-khaki peer-[:not(:placeholder-shown)]:-top-2 peer-[:not(:placeholder-shown)]:bg-[#18241c] peer-[:not(:placeholder-shown)]:text-[11.5px] peer-[:not(:placeholder-shown)]:text-khaki"
+    >
+      {label}
+    </label>
+    {error && (
+      <span className="absolute bottom-px left-1 text-[12px] text-danger" id={id}>
+        {error}
+      </span>
+    )}
+  </div>
+);
 
 export { contactSchema, type ContactValues };
 
@@ -109,124 +155,100 @@ const Contact = () => {
   });
 
   return (
-    <section id="contact" className="panel reveal" aria-labelledby="contact-title">
-      <div className="contact-grid">
-        <div className="contact-cta">
-          <span className="panel-icon lg" aria-hidden>
+    <section id="contact" className={cn("panel reveal", span.full)} aria-labelledby="contact-title">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,.9fr)_minmax(0,1.35fr)] items-stretch gap-[clamp(20px,3vw,40px)] max-[1100px]:grid-cols-2 max-[700px]:grid-cols-1">
+        <div className="flex flex-col items-start gap-3.5">
+          <span
+            data-slot="panel-icon"
+            className={cn(khakiTile, "size-11 rounded-[13px] border-khaki/22")}
+            aria-hidden
+          >
             <Send size={20} strokeWidth={1.8} />
           </span>
-          <h2 className="contact-title" id="contact-title">
+          <h2
+            className="mt-1 text-[clamp(22px,2vw,28px)] leading-[1.15] font-bold tracking-[-0.025em] text-balance"
+            id="contact-title"
+          >
             Let&apos;s build something great
           </h2>
-          <p>
+          <p className="max-w-[38ch] text-[14.5px] text-fg-2">
             Have a project in mind or want to collaborate? Tell me what you
             need and I&apos;ll reply within a day.
           </p>
-          <a href={`mailto:${profile.email}`} className="btn btn-primary btn-sm magnetic">
+          <a href={`mailto:${profile.email}`} className={btn("primary", "sm", "magnetic mt-1")}>
             Email me
             <ArrowRight size={16} aria-hidden />
           </a>
-          <Socials compact />
+          <Socials compact className="mt-auto pt-2" iconClassName="rounded-[11px]" />
         </div>
 
-        <ul className="contact-details">
-          {DETAILS.map(({ icon: Icon, ...row }) => (
-            <li className="contact-detail-row" key={row.label}>
-              <span className="cd-icon" aria-hidden>
-                <Icon size={17} strokeWidth={1.75} />
-              </span>
-              <div>
-                <div className="cd-label">{row.label}</div>
-                <div className={`cd-value${row.label === "Availability" ? " is-live" : ""}`}>
-                  {row.href ? <a href={row.href}>{row.value}</a> : row.value}
+        <ul className="flex flex-col justify-center border-l border-line pl-[clamp(20px,3vw,40px)] max-[700px]:border-t max-[700px]:border-l-0 max-[700px]:pt-2 max-[700px]:pl-0">
+          {DETAILS.map(({ icon: Icon, ...row }) => {
+            const live = row.label === "Availability";
+            return (
+              <li className="flex items-center gap-3.5 py-3" key={row.label}>
+                <span className={cn(ringIcon, "size-[38px]")} aria-hidden>
+                  <Icon size={17} strokeWidth={1.75} />
+                </span>
+                <div>
+                  <div className="text-[12.5px] text-fg-3">{row.label}</div>
+                  <div
+                    className={cn(
+                      "text-[14.5px] font-medium wrap-anywhere text-fg-1",
+                      live && "flex items-center gap-2 text-leaf",
+                    )}
+                  >
+                    {live && <span className={liveDot} aria-hidden />}
+                    {row.href ? (
+                      <a href={row.href} className={hoverKhaki}>
+                        {row.value}
+                      </a>
+                    ) : (
+                      row.value
+                    )}
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
 
-        <div className="form-card glow-border">
+        {/* The one card with the travelling edge light. */}
+        <div className="glow-border rounded-2xl bg-bg-deep/60 p-[clamp(16px,1.8vw,22px)] max-[1100px]:col-span-full">
           <form id="contactForm" onSubmit={handleSubmit(onSubmit)} noValidate>
             {/* Honeypot: hidden from people and assistive tech, filled by bots. */}
             <input
               type="text"
               name="website"
-              className="hp-field"
+              className="pointer-events-none absolute -left-[9999px] size-px opacity-0"
               tabIndex={-1}
               autoComplete="off"
               aria-hidden
             />
-            <div className="form-row2">
-              <div className="field2">
-                <input
-                  id={`${errId}-name-input`}
-                  type="text"
-                  placeholder=" "
-                  autoComplete="name"
-                  {...fieldProps("name")}
-                />
-                <label htmlFor={`${errId}-name-input`}>Name</label>
-                <div className="underline" aria-hidden />
-                {errors.name && (
-                  <span className="field-err" id={`${errId}-name`}>
-                    {errors.name.message}
-                  </span>
-                )}
-              </div>
-
-              <div className="field2">
-                <input
-                  id={`${errId}-email-input`}
-                  type="email"
-                  placeholder=" "
-                  autoComplete="email"
-                  {...fieldProps("email")}
-                />
-                <label htmlFor={`${errId}-email-input`}>Email</label>
-                <div className="underline" aria-hidden />
-                {errors.email && (
-                  <span className="field-err" id={`${errId}-email`}>
-                    {errors.email.message}
-                  </span>
-                )}
-              </div>
+            <div className="grid grid-cols-2 gap-x-3 max-[700px]:grid-cols-1">
+              <Field id={`${errId}-name`} label="Name" error={errors.name?.message}>
+                <input type="text" placeholder=" " autoComplete="name" {...fieldProps("name")} />
+              </Field>
+              <Field id={`${errId}-email`} label="Email" error={errors.email?.message}>
+                <input type="email" placeholder=" " autoComplete="email" {...fieldProps("email")} />
+              </Field>
             </div>
 
-            <div className="field2">
-              <input
-                id={`${errId}-subject-input`}
-                type="text"
-                placeholder=" "
-                {...fieldProps("subject")}
-              />
-              <label htmlFor={`${errId}-subject-input`}>Subject</label>
-              <div className="underline" aria-hidden />
-              {errors.subject && (
-                <span className="field-err" id={`${errId}-subject`}>
-                  {errors.subject.message}
-                </span>
-              )}
-            </div>
+            <Field id={`${errId}-subject`} label="Subject" error={errors.subject?.message}>
+              <input type="text" placeholder=" " {...fieldProps("subject")} />
+            </Field>
 
-            <div className="field2">
-              <textarea
-                id={`${errId}-message-input`}
-                rows={5}
-                placeholder=" "
-                {...fieldProps("message")}
-              />
-              <label htmlFor={`${errId}-message-input`}>Message</label>
-              <div className="underline" aria-hidden />
-              {errors.message && (
-                <span className="field-err" id={`${errId}-message`}>
-                  {errors.message.message}
-                </span>
-              )}
-            </div>
+            <Field id={`${errId}-message`} label="Message" error={errors.message?.message}>
+              <textarea rows={5} placeholder=" " {...fieldProps("message")} />
+            </Field>
 
             <button
               type="submit"
-              className="btn btn-primary send-btn magnetic"
+              className={btn(
+                "primary",
+                "md",
+                "group/send magnetic w-full rounded-xl p-3.5 disabled:cursor-wait disabled:opacity-70",
+              )}
               id="sendBtn"
               disabled={isSubmitting}
             >
@@ -235,12 +257,18 @@ const Contact = () => {
                 id="sendArrow"
                 size={17}
                 aria-hidden
-                className={isSubmitting ? "spin-icon" : undefined}
+                className={cn(
+                  "shrink-0 transition-transform duration-300 ease-smooth group-enabled/send:group-hover/send:translate-x-[3px]",
+                  isSubmitting && "animate-spin-icon",
+                )}
               />
             </button>
 
             <p
-              className={`form-msg${sendError ? " error" : ""}`}
+              className={cn(
+                "mt-2.5 min-h-[18px] text-[13.5px] [&_a]:text-fg-1 [&_a]:underline [&_a]:underline-offset-[3px]",
+                sendError ? "text-danger" : "text-leaf",
+              )}
               role="status"
               aria-live="polite"
             >

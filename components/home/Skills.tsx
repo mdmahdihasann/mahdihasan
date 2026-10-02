@@ -1,10 +1,12 @@
 "use client";
 
 import { Layers } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 
 import { skillGroups } from "@/data/skills";
 import { prefersReducedMotion } from "@/lib/motion";
+import { span } from "@/lib/ui";
+import { cn } from "@/lib/utils";
 
 import PanelHead from "./PanelHead";
 import TechIcon from "./TechIcon";
@@ -62,13 +64,15 @@ const Skills = () => {
       ref={cardRef}
       // An attribute, not a class: re-rendering `className` would wipe the
       // `.in` that useReveal added and hide the panel again.
-      className="panel reveal"
+      className={cn("panel reveal", span.half)}
       data-filled={filled || undefined}
       aria-labelledby="skills-title"
     >
       <PanelHead icon={Layers} title="My Expertise" id="skills-title" />
 
-      <div className="skill-tabs" role="tablist" aria-label="Skill groups" onKeyDown={onKeyDown}>
+      <div
+        className="mb-[clamp(18px,2.2vw,24px)] flex flex-wrap gap-1.5"
+        role="tablist" aria-label="Skill groups" onKeyDown={onKeyDown}>
         {skillGroups.map((group, i) => (
           <button
             key={group.cat}
@@ -82,6 +86,7 @@ const Skills = () => {
             aria-controls={`${uid}-panel-${i}`}
             tabIndex={i === active ? 0 : -1}
             onClick={() => setActive(i)}
+            className="rounded-full border border-line px-[13px] py-[7px] text-[13px] font-semibold text-fg-2 transition-[color,background-color,border-color] duration-[250ms] hover:border-line-strong hover:text-fg-1 aria-selected:border-khaki aria-selected:bg-khaki aria-selected:text-ink"
           >
             {group.cat}
           </button>
@@ -91,21 +96,26 @@ const Skills = () => {
       {skillGroups.map((group, i) => (
         <ul
           key={group.cat}
-          className="skill-list"
+          className="grid gap-[18px]"
           role="tabpanel"
           id={`${uid}-panel-${i}`}
           aria-labelledby={`${uid}-tab-${i}`}
           hidden={i !== active}
         >
-          {group.items.map(({ name, level, mark }) => (
-            <li className="skill-item" key={name}>
-              <span className="skill-name">
+          {group.items.map(({ name, level, mark }, j) => (
+            <li
+              className="group/tech grid grid-cols-[1fr_auto] items-center gap-y-[9px]"
+              key={name}
+              // The first four bars fill in a quick stagger.
+              style={{ "--delay": `${j < 4 ? j * 0.06 : 0}s` } as CSSProperties}
+            >
+              <span className="flex items-center gap-2.5 text-[14.5px] font-medium text-fg-1">
                 <TechIcon mark={mark} size={15} />
                 {name}
               </span>
-              <span className="skill-pct">{level}%</span>
+              <span className="text-[13.5px] text-fg-2 tabular-nums">{level}%</span>
               <div
-                className="skill-bar"
+                className="col-span-full h-1.5 overflow-hidden rounded-md bg-fg-1/7"
                 role="meter"
                 aria-label={name}
                 aria-valuenow={level}
