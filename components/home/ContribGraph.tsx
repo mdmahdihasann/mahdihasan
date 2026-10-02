@@ -6,7 +6,7 @@ import type { ContribDay } from "@/lib/server/github";
 import { cn } from "@/lib/utils";
 
 /** One square of the calendar, shaded by its contribution level (0–4). */
-const day =
+const dayCell =
   "aspect-square rounded-[3px] bg-fg-1/6 data-[level='1']:bg-leaf/26 data-[level='2']:bg-leaf/48 data-[level='3']:bg-leaf/74 data-[level='4']:bg-leaf";
 
 /** UTC on both sides of hydration, so server and browser print the same date. */
@@ -73,7 +73,7 @@ const ContribGraph = ({ weeks, total }: { weeks: ContribDay[][]; total: number }
               <span
                 key={day.date}
                 className={cn(
-                  day,
+                  dayCell,
                   "outline outline-offset-1 outline-transparent transition-[outline-color] duration-150 hover:outline-khaki",
                   // The year sweeps in week by week, oldest first.
                   "revealed:animate-[dayIn_.5s_var(--ease-spring)_calc(.15s_+_var(--w)*11ms)_backwards]",
@@ -102,7 +102,7 @@ const ContribGraph = ({ weeks, total }: { weeks: ContribDay[][]; total: number }
           {[0, 1, 2, 3, 4].map((l) => (
             <span
               key={l}
-              className={cn(day, "w-[11px] first-of-type:ml-1 last-of-type:mr-1")}
+              className={cn(dayCell, "w-[11px] first-of-type:ml-1 last-of-type:mr-1")}
               data-level={l}
             />
           ))}
