@@ -18,8 +18,8 @@ export type Stat = {
  * TODO: adjust these to your real numbers before publishing.
  */
 export const stats: Stat[] = [
-  { count: 2, suffix: "+", label: "Years of experience", icon: CalendarDays },
-  { count: 20, suffix: "+", label: "Projects completed", icon: FolderCheck },
+  { count: 3, suffix: "+", label: "Years of experience", icon: CalendarDays },
+  { count: 30, suffix: "+", label: "Projects completed", icon: FolderCheck },
   { count: 16, suffix: "", label: "Technologies used", icon: Layers },
   { count: 100, suffix: "%", label: "Client satisfaction", icon: ThumbsUp },
 ];
